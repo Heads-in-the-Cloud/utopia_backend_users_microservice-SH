@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 FROM 026390315914.dkr.ecr.us-west-2.amazonaws.com/utopia_backend_base_image-sh
 
 # Changing working directory to the system user's home repository
@@ -20,4 +19,4 @@ USER utopian
 EXPOSE 5000
 
 # Setting the entry_script as the images entrypoint
-ENTRYPOINT ["./entry_script.sh"]
+ENTRYPOINT ["/home/utopian/app/entry_script.sh"]
