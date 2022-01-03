@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  users-fastapi:
+    image: utopia_backend_fastapi_users_microservice
+    secrets:
+#      - utopia_db_uri
+      - utopia_secret_key
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  db:
+    image: utopia_backend_database
+
+secrets:
+  utopia_db_uri:
+    file: ../../docker-compose/utopia_db_uri
+  utopia_secret_key:
+    file: ../../docker-compose/utopia_secret_key
