@@ -23,6 +23,22 @@ class User(BaseModel):
     phone: str
 
 
+class UserUpdate(BaseModel):
+    role_id: Optional[int] = None
+    username: Optional[str] = None
+    email: Optional[str] = None
+    given_name: Optional[str] = None
+    family_name: Optional[str] = None
+    password: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class UserAuth(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
 class UserFull(User):
     id: int
 
@@ -37,6 +53,10 @@ class UserFull(User):
 
 class UserRole(BaseModel):
     name: str
+
+
+class UserRoleUpdate(BaseModel):
+    name: Optional[str] = None
 
 
 class UserRoleFull(UserRole):
