@@ -23,7 +23,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps{
                 withSonarQubeEnv('SonarQube') {
-                    sh "${scanner_home}/bin/sonar-scanner"
+                    sh "${scanner_home}/bin/sonar-scanner -D'sonar.projectKey=sh-users-api'"
                 }
             }
         }
