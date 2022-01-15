@@ -8,7 +8,7 @@ pipeline {
         aws_region = "${region}"
         aws_ecr_account = '026390315914'
         repo_name = 'utopia_backend_users_microservice'
-        scanner_home = tool "${SonarQubeScanner}";
+        scanner_home = tool "${SonarQube}";
     }
 
     stages {
