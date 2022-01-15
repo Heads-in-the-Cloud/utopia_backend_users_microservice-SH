@@ -21,8 +21,10 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            withSonarQubeEnv() {
-                sh "${scanner_home}/bin/sonar-scanner"
+            steps{
+                withSonarQubeEnv() {
+                    sh "${scanner_home}/bin/sonar-scanner"
+                }
             }
         }
 
