@@ -3,20 +3,17 @@
 # ########################################              Main             ###############################################
 # ########################################                               ###############################################
 # ######################################################################################################################
-
+import os
 from typing import List
 
 from fastapi import FastAPI, HTTPException
-from sqlalchemy.orm import Session
+from sqlmodel import Session, SQLModel, create_engine
 from werkzeug.security import generate_password_hash
 
-from .database import engine
-from . import (
-    models as m,
-    schemas as s
-)
+from .sqlmodels import *
 
-m.Base.metadata.create_all(bind=engine)
+SQLALCHEMY_DATABASE_URL = os.getenv('DB_ACCESS_URI') or "mysql+pymysql://root:root@127.0.0.1:6603/utopia"
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 app = FastAPI()
 
@@ -26,6 +23,21 @@ app = FastAPI()
 # ########################################          API Routes           ###############################################
 # ########################################                               ###############################################
 # ######################################################################################################################
+
+
+# ------------------------------------------------
+#                 Startup DB Creation
+# ------------------------------------------------
+
+
+@app.on_event("startup")
+def on_startup():
+    SQLModel.metadata.create_all(engine)
+
+
+# ------------------------------------------------
+#                   Health Check
+# ------------------------------------------------
 
 
 @app.get("/health")
@@ -40,12 +52,12 @@ def health_check():
 # --------------------  Create  ------------------
 
 
-@app.post("/api/v2/users/", response_model=s.UserFull)
-def create_user(user: s.User):
+@app.post("/api/v2/users/", response_model=UserRead)
+def create_user(user: UserCreate):
     with Session(engine) as db:
         db_user = db                                \
-            .query(m.User)                          \
-            .filter(m.User.email == user.email)     \
+            .query(User)                            \
+            .filter(User.email == user.email)       \
             .first()
 
         if not db_user:
@@ -55,31 +67,25 @@ def create_user(user: s.User):
             )
 
         hashed_password = generate_password_hash(user.password)
-        db_user = m.User(
-            role_id=user.role_id,
-            given_name=user.given_name,
-            family_name=user.family_name,
-            username=user.username,
-            password=hashed_password,
-            email=user.email,
-            phone=user.phone)
+        user.password = hashed_password
+        new_user = User.from_orm(user)
 
-        db.add(db_user)
+        db.add(new_user)
         db.commit()
-        db.refresh(db_user)
+        db.refresh(new_user)
 
-        return db_user
+        return new_user
 
 
 # --------------------   Read   ------------------
 
 
-@app.get("/api/v2/users/{user_id}", response_model=s.UserFull)
+@app.get("/api/v2/users/{user_id}", response_model=UserRead)
 def get_user(user_id: int):
     with Session(engine) as db:
         db_user = db                        \
-            .query(m.User)                  \
-            .filter(m.User.id == user_id)   \
+            .query(User)                    \
+            .filter(User.id == user_id)     \
             .first()
 
         if not db_user:
@@ -91,12 +97,12 @@ def get_user(user_id: int):
         return db_user
 
 
-@app.get("/api/v2/users/email={user_email}", response_model=s.UserFull)
+@app.get("/api/v2/users/email={user_email}", response_model=UserRead)
 def get_user_by_email(user_email: str):
     with Session(engine) as db:
         db_user = db                                \
-            .query(m.User)                          \
-            .filter(m.User.email == user_email)     \
+            .query(User)                            \
+            .filter(User.email == user_email)       \
             .first()
 
         if not db_user:
@@ -108,12 +114,12 @@ def get_user_by_email(user_email: str):
         return db_user
 
 
-@app.get("/api/v2/users/username={username}", response_model=s.UserFull)
+@app.get("/api/v2/users/username={username}", response_model=UserRead)
 def get_user_by_username(username: str):
     with Session(engine) as db:
         db_user = db                                \
-            .query(m.User)                          \
-            .filter(m.User.username == username)    \
+            .query(User)                            \
+            .filter(User.username == username)      \
             .first()
 
         if not db_user:
@@ -125,11 +131,11 @@ def get_user_by_username(username: str):
         return db_user
 
 
-@app.get("/api/v2/users/", response_model=List[s.UserFull])
+@app.get("/api/v2/users/", response_model=List[UserRead])
 def get_users(skip: int = 0, limit: int = 100):
     with Session(engine) as db:
         users = db              \
-            .query(m.User)      \
+            .query(User)        \
             .offset(skip)       \
             .limit(limit)       \
             .all()
@@ -144,12 +150,12 @@ def get_users(skip: int = 0, limit: int = 100):
         return users
 
 
-@app.get("/api/v2/users/role_id={role_id}", response_model=List[s.UserFull])
+@app.get("/api/v2/users/role_id={role_id}", response_model=List[UserRead])
 def get_users_by_role(role_id: int):
     with Session(engine) as db:
         db_users = db                               \
-            .query(m.User)                          \
-            .filter(m.User.role_id == role_id)      \
+            .query(User)                            \
+            .filter(User.role_id == role_id)        \
             .all()
 
         # In python, an empty list is treated as a boolean False, so triggers if db_users is empty
@@ -166,7 +172,7 @@ def get_users_by_role(role_id: int):
 def get_user_ids(skip: int = 0, limit: int = 100):
     with Session(engine) as db:
         users = db                  \
-            .query(m.User)          \
+            .query(User)            \
             .offset(skip)           \
             .limit(limit)           \
             .all()
@@ -183,12 +189,12 @@ def get_user_ids(skip: int = 0, limit: int = 100):
         return user_ids
 
 
-@app.get("/api/v2/users/{username}/auth", response_model=s.UserAuth)
+@app.get("/api/v2/users/{username}/auth", response_model=UserAuth)
 def get_user_auth(username: str):
     with Session(engine) as db:
         db_user = db                                \
-            .query(m.User)                          \
-            .filter(m.User.username == username)    \
+            .query(User)                            \
+            .filter(User.username == username)      \
             .first()
 
         if not db_user:
@@ -203,8 +209,8 @@ def get_user_auth(username: str):
 # --------------------  Update  ------------------
 
 
-@app.patch("/api/v2/users/{user_id}", response_model=s.UserFull)
-def update_user(user_id: int, user: s.UserUpdate):
+@app.patch("/api/v2/users/{user_id}", response_model=UserRead)
+def update_user(user_id: int, user: UserUpdate):
     with Session(engine) as db:
         db_user = get_user(user_id)
 
@@ -232,8 +238,8 @@ def update_user(user_id: int, user: s.UserUpdate):
 def delete_airplane(user_id: int):
     with Session(engine) as db:
         db_user = db                        \
-            .query(m.User)                  \
-            .filter(m.User.id == user_id)   \
+            .query(User)                    \
+            .filter(User.id == user_id)     \
             .first()
 
         if not db_user:
@@ -254,21 +260,21 @@ def delete_airplane(user_id: int):
 
 # --------------------  Create  ------------------
 
-@app.post("/api/v2/user_roles/", response_model=s.UserRoleFull)
-def create_user_role(role: s.UserRole):
+@app.post("/api/v2/user_roles/", response_model=UserRoleRead)
+def create_user_role(role: UserRoleCreate):
     with Session(engine) as db:
         db_role = db                                \
-            .query(m.UserRole)                      \
-            .filter(m.UserRole.name == role.name)   \
+            .query(UserRole)                        \
+            .filter(UserRole.name == role.name)     \
             .first()
 
         if db_role:
             raise HTTPException(
                 status_code=404,
-                detail="User role with that name already exists."
+                detail="User role with that name already exist"
             )
 
-        new_role = m.UserRole(name=role.name)
+        new_role = UserRole.from_orm(role)
 
         db.add(new_role)
         db.commit()
@@ -280,12 +286,12 @@ def create_user_role(role: s.UserRole):
 # --------------------   Read   ------------------
 
 
-@app.get("/api/v2/user_roles/{role_id}", response_model=s.UserRoleFull)
+@app.get("/api/v2/user_roles/{role_id}", response_model=UserRoleRead)
 def get_user_role(role_id: int):
     with Session(engine) as db:
         db_role = db                            \
-            .query(m.UserRole)                  \
-            .filter(m.UserRole.id == role_id)   \
+            .query(UserRole)                    \
+            .filter(UserRole.id == role_id)     \
             .first()
 
         if not db_role:
@@ -297,11 +303,11 @@ def get_user_role(role_id: int):
         return db_role
 
 
-@app.get("/api/v2/user_roles/", response_model=List[s.UserRoleFull])
+@app.get("/api/v2/user_roles/", response_model=List[UserRoleRead])
 def get_user_roles(skip: int = 0, limit: int = 100):
     with Session(engine) as db:
         user_roles = db             \
-            .query(m.UserRole)      \
+            .query(UserRole)        \
             .offset(skip)           \
             .limit(limit)           \
             .all()
@@ -315,12 +321,12 @@ def get_user_roles(skip: int = 0, limit: int = 100):
         return user_roles
 
 
-@app.get("/api/v2/user_roles/name={name}", response_model=s.UserRoleFull)
+@app.get("/api/v2/user_roles/name={name}", response_model=UserRoleRead)
 def get_user_role_by_name(name: str):
     with Session(engine) as db:
         db_role = db                            \
-            .query(m.UserRole)                  \
-            .filter(m.UserRole.name == name)   \
+            .query(UserRole)                    \
+            .filter(UserRole.name == name)      \
             .first()
 
         if not db_role:
@@ -341,8 +347,8 @@ def get_user_role_by_name(name: str):
 def delete_user_role(role_id: int):
     with Session(engine) as db:
         db_role = db                            \
-            .query(m.UserRole)                  \
-            .filter(m.UserRole.id == role_id)   \
+            .query(UserRole)                    \
+            .filter(UserRole.id == role_id)     \
             .first()
 
         if not db_role:
