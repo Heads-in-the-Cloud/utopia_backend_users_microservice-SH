@@ -17,7 +17,7 @@ class UserBase(SQLModel):
     email: str = Field(nullable=False, index=True)
     phone: str
 
-    user_class: "UserRole" = Relationship(back_populates="users")
+    # user_class: "UserRole" = Relationship(back_populates="users")
 
 
 class User(UserBase, table=True):
@@ -56,10 +56,11 @@ class UserAuth(SQLModel):
 class UserRoleBase(SQLModel):
     name: str = Field(nullable=False)
 
-    users: List[User] = Relationship(back_populates="user_class")
+    # users: List[User] = Relationship(back_populates="user_class")
 
 
 class UserRole(UserRoleBase, table=True):
+    __tablename__ = "user_role"
     id: Optional[int] = Field(default=None, primary_key=True)
 
 
