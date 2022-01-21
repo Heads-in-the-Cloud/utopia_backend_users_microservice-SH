@@ -8,9 +8,7 @@ pipeline {
 
         docker_user = "seanhorner"
 
-        aws_region = "${region}"
-        aws_ecr_account = '${ORG_ACCOUNT_NUM}'
-        org_ecr_uri = '${aws_ecr_account}.dkr.ecr.${aws_region}.amazonaws.com'
+        org_ecr_uri = '${ORG_ACCOUNT_NUM}.dkr.ecr.${region}.amazonaws.com'
 
         repo_name = 'utopia_backend_users_fastapi'
         scanner_home = tool "${SonarQubeScanner}";
@@ -21,6 +19,23 @@ pipeline {
             steps {
                 echo 'Getting AWS credentials to push to Org ECR...'
                 sh 'aws ecr get-login-password --region ${aws_region} | docker login --username AWS --password-stdin ${org_ecr_uri}'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps{
+                echo 'Beginning SonarQube analysis...'
+                withSonarQubeEnv(installationName: 'SonarQube') {
+                    sh "${scanner_home}/bin/sonar-scanner"
+                }
+            }
+        }
+
+        stage('Testing') {
+            agent {dockerfile true}
+            steps {
+                echo 'Running Python unittests...'
+                sh 'pytest api_microservice/test_runner.py'
             }
         }
 
