@@ -16,7 +16,7 @@ pipeline {
         stage('aws_login') {
             steps {
                 echo 'Getting AWS credentials to push to Org ECR...'
-                sh 'aws ecr get-login-password --region ${aws_region} | docker login --username AWS --password-stdin ${org_ecr_uri}'
+                sh 'aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${org_ecr_uri}'
             }
         }
 
