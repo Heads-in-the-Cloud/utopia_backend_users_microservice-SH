@@ -69,6 +69,12 @@ def present():
          tags=["infrastructure"],
          summary="Health check url for ECS/EKS")
 def health_check():
+    """
+    Both ECS and EKS like to have a health check route to ensure that a service
+    is accessible and working.
+
+    :return: Generic health message JSON.
+    """
     return {"msg": "Healthy"}
 
 
@@ -85,6 +91,16 @@ def health_check():
           summary="Create new users",
           response_description="Info for newly created user from database.")
 def create_user(user: UserCreate, session: Session = Depends(get_session)):
+    """
+        Create an item with all the information:
+
+        - **role_id**: the user's role id, indicating permissions
+        - **given_name**: user's first/identifying name
+        - **family_name**: user's last/family/clan name
+        - **username**: user's identifying name on the service and for login
+        - **email**: user's email for communication and alternate login credential
+        - **phone**: user's phone number for verification and 2FA/MFA
+    """
     db_user = session                           \
         .query(User)                            \
         .filter(User.email == user.email)       \

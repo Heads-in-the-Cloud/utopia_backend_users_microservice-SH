@@ -3,7 +3,6 @@ import pytest
 from .sqlmodels import User, UserRole
 from .main import app, get_session
 
-from fastapi import Header
 from fastapi.testclient import TestClient
 
 from sqlmodel import Session, SQLModel, create_engine
@@ -45,15 +44,8 @@ def client_fixture(session: Session):
 # ------------------------------------------------
 #                    Test Data
 # ------------------------------------------------
-
-
-role_1 = UserRole(
-    name="admin"
-)
-
-role_2 = UserRole(
-    name="guest"
-)
+# Because of their size, the test User data dictionaries are placed here for use below.
+# User Roles only require a name and are therefore entered directly in each test.
 
 
 test_user_data = {
@@ -66,16 +58,6 @@ test_user_data = {
     "phone": "555-123-4567"
 }
 
-user_1 = User(
-    role_id=1,
-    given_name="test",
-    family_name="test",
-    username="test.test",
-    password="test",
-    email="test.test@test.com",
-    phone="555-123-4567"
-)
-
 test_user_data_2 = {
     "role_id": 2,
     "given_name": "tester",
@@ -84,16 +66,6 @@ test_user_data_2 = {
     "email": "tester.tester@test.com",
     "phone": "555-765-4321"
 }
-
-user_2 = User(
-    role_id=2,
-    given_name="tester",
-    family_name="tester",
-    username="tester.tester",
-    password="test",
-    email="tester.tester@test.com",
-    phone="555-765-4321"
-)
 
 
 # ######################################################################################################################
@@ -318,8 +290,8 @@ def test_update_user(client: TestClient):
 
 
 def test_delete_user(client: TestClient):
-    client.post("/api/v2/user_roles/",json={"name": "admin"})
-    client.post("/api/v2/users/",json=test_user_data)
+    client.post("/api/v2/user_roles/", json={"name": "admin"})
+    client.post("/api/v2/users/", json=test_user_data)
 
     response = client.delete("/api/v2/users/1")
     assert response.status_code == 200
@@ -351,7 +323,7 @@ def test_role_create(client: TestClient):
 
 
 def test_create_existing_role(client: TestClient):
-    client.post("/api/v2/user_roles/",json={"name": "admin"})
+    client.post("/api/v2/user_roles/", json={"name": "admin"})
 
     response = client.post(
         "/api/v2/user_roles/",
