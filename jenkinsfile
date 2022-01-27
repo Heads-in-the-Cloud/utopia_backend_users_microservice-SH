@@ -6,9 +6,9 @@ pipeline {
     environment {
         commit = sh(returnStdout: true, script: "git rev-parse --short=8 HEAD").trim()
 
-        org_ecr_uri = '${ORG_ACCOUNT_NUM}.dkr.ecr.${region}.amazonaws.com'
+        org_ecr_uri = '026390315914.dkr.ecr.us-west-2.amazonaws.com'
 
-        repo_name = 'utopia_backend_users_fastapi-SH'
+        repo_name = 'utopia_backend_users_fastapi-sh'
         scanner_home = tool "${SonarQubeScanner}";
     }
 
@@ -20,14 +20,14 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps{
-                echo 'Beginning SonarQube analysis...'
-                withSonarQubeEnv(installationName: 'SonarQube') {
-                    sh "${scanner_home}/bin/sonar-scanner"
-                }
-            }
-        }
+//         stage('SonarQube Analysis') {
+//             steps{
+//                 echo 'Beginning SonarQube analysis...'
+//                 withSonarQubeEnv(installationName: 'SonarQube') {
+//                     sh "${scanner_home}/bin/sonar-scanner"
+//                 }
+//             }
+//         }
 
         stage('Testing') {
             agent {dockerfile true}
@@ -58,9 +58,9 @@ pipeline {
         stage('Cleanup') {
             steps {
                 echo 'Removing images'
-                sh 'docker images rm -f ${repo_name}:latest'
-                sh 'docker images rm -f ${org_ecr_uri}/${repo_name}:latest'
-                sh 'docker images rm -f ${org_ecr_uri}/${repo_name}:${commit}'
+                sh 'docker rmi ${repo_name}:latest'
+                sh 'docker rmi ${org_ecr_uri}/${repo_name}:latest'
+                sh 'docker rmi ${org_ecr_uri}/${repo_name}:${commit}'
             }
         }
     }
