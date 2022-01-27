@@ -30,7 +30,6 @@ pipeline {
 //         }
 
         stage('Testing') {
-            agent {dockerfile true}
             steps {
                 echo 'Running Python unittests...'
                 sh 'pytest api_microservice/test_runner.py'
