@@ -32,6 +32,11 @@ api.init_app(app)
 migrate = Migrate(db, app)
 
 
+@app.route('/')
+@app.route('/index')
+def proof_of_life():
+    return "<h2> Users microservice, reporting for duty. </h2>"
+
 # ######################################################################################################################
 # ########################################                               ###############################################
 # ########################################         Make Runnable         ###############################################
@@ -40,4 +45,4 @@ migrate = Migrate(db, app)
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')

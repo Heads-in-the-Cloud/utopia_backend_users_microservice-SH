@@ -1,4 +1,7 @@
+import json
 import unittest
+
+import requests
 
 
 class ApiTests(unittest.TestCase):
