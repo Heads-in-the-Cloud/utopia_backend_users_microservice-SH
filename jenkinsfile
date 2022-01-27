@@ -34,6 +34,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building Docker image...'
+                sh 'docker context use default'
                 sh 'docker build -t ${repo_name} .'
             }
         }
