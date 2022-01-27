@@ -16,7 +16,7 @@ db = SQLAlchemy()
 class User(db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    role_id = db.Column(db.Integer, db.ForeignKey("role_id.id"), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey("user_role.id"), nullable=False)
     given_name = db.Column(db.String, nullable=False)
     family_name = db.Column(db.String, nullable=False)
     username = db.Column(db.String, nullable=False)

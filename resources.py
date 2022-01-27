@@ -3,7 +3,7 @@
 # ########################################        Restful Resources      ###############################################
 # ########################################                               ###############################################
 # ######################################################################################################################
-from flask import request
+from flask import request, jsonify, make_response
 from flask_restful import Resource, Api
 
 from schemas import *
@@ -14,8 +14,19 @@ from schemas import *
 
 
 class UserResource(Resource):
-    def get(self, user_id):
-        user = User.query.get_or_404(user_id)
+    def post(self):
+        user = None
+
+        if 'user_id' in request.json:
+            user = User.query.filter_by(id=request.json['user_id']).first()
+        elif 'email' in request.json:
+            user = User.query.filter_by(email=request.json['email']).first()
+        else:
+            return make_response(jsonify({
+                'status': 'fail',
+                'message': 'Neither user_id nor email provided. Please provide at least one.'
+            }), 401)
+
         return user_schema.dump(user)
 
 
@@ -23,6 +34,15 @@ class UserListResource(Resource):
     def get(self):
         users = User.query.all()
         return users_schema.dump(users)
+
+
+class UserNumberListResource(Resource):
+    def get(self):
+        users = User.query.all()
+        user_nums = []
+        for user in users:
+            user_nums.append(user.id)
+        return user_nums
 
 
 class UserCreationResource(Resource):
@@ -36,17 +56,25 @@ class UserCreationResource(Resource):
             email=request.json['email'],
             phone=request.json['phone']
         )
-        db.session.add(new_user)
-        db.session.commit()
-        return user_schema.dump(new_user)
+
+        user = User.query.filter_by(email=new_user.email).first()
+
+        if not user:
+            db.session.add(new_user)
+            db.session.commit()
+            return make_response(jsonify(user_schema.dump(new_user)), 201)
+        else:
+            return make_response(jsonify({
+                'status': 'failure',
+                'message': 'User already exists for that email. Please log in.'
+            }), 202)
 
 
 class UserPatchResource(Resource):
-    def patch(self, user_id):
+    def post(self):
+        user_id = request.json['user_id']
         user = User.query.get_or_404(user_id)
 
-        if 'user_id' in request.json:
-            user.id = request.json['user_id']
         if 'role_id' in request.json:
             user.role_id = request.json['role_id']
         if 'given_name' in request.json:
@@ -67,12 +95,15 @@ class UserPatchResource(Resource):
 
 
 class UserDeleteResource(Resource):
-    def delete(self, user_id):
+    def post(self):
+        user_id = request.json['user_id']
         user = User.query.get_or_404(user_id)
 
         db.session.delete(user)
         db.session.commit()
-        return '', 204
+        return make_response(jsonify({
+            'message': 'Successfully deleted.'
+        }), 204)
 
 
 # ------------------------------------------------
@@ -103,7 +134,8 @@ class UserRoleCreationResource(Resource):
 
 
 class UserRolePatchResource(Resource):
-    def patch(self, role_id):
+    def post(self):
+        role_id = request.json['role_id']
         user_role = UserRole.query.get_or_404(role_id)
 
         if 'role_id' in request.json:
@@ -116,8 +148,12 @@ class UserRolePatchResource(Resource):
 
 
 class UserRoleDeleteResource(Resource):
-    def delete(self, role_id):
+    def post(self):
+        role_id = request.json['role_id']
         user_role = UserRole.query.get_or_404(role_id)
+
+        affected_users = User.query.filter_by('role_id' == role_id)
+
 
         db.session.delete(user_role)
         db.session.commit()
@@ -136,18 +172,19 @@ api = Api()
 #                      User
 # ------------------------------------------------
 
-api.add_resource(UserResource, '/api/user/<user_id>')
-api.add_resource(UserListResource, '/api/user/all')
-api.add_resource(UserCreationResource, '/api/user/create')
-api.add_resource(UserPatchResource, '/api/user/update/<user_id>')
-api.add_resource(UserDeleteResource, '/api/user/delete/<user_id>')
+api.add_resource(UserResource, '/api/v1/users/<user_id>')
+api.add_resource(UserListResource, '/api/v1/users/')
+api.add_resource(UserNumberListResource, '/api/v1/users/id-list')
+api.add_resource(UserCreationResource, '/api/v1/users/create')
+api.add_resource(UserPatchResource, '/api/v1/users/update')
+api.add_resource(UserDeleteResource, '/api/v1/users/delete')
 
 # ------------------------------------------------
 #                      UserRole
 # ------------------------------------------------
 
-api.add_resource(UserRoleResource, '/api/user_role/<role_id>')
-api.add_resource(UserRoleListResource, '/api/user_role/all')
-api.add_resource(UserRoleCreationResource, '/api/user_role/create')
-api.add_resource(UserRolePatchResource, '/api/user_role/update/<role_id>')
-api.add_resource(UserRoleDeleteResource, '/api/user_role/delete/<role_id>')
+api.add_resource(UserRoleResource, '/api/v1/user_roles/<role_id>')
+api.add_resource(UserRoleListResource, '/api/v1/user_roles/')
+api.add_resource(UserRoleCreationResource, '/api/v1/user_roles/create')
+api.add_resource(UserRolePatchResource, '/api/v1/user_roles/update')
+api.add_resource(UserRoleDeleteResource, '/api/v1/user_roles/delete')
