@@ -53,9 +53,9 @@ pipeline {
         stage('Cleanup') {
             steps {
                 echo 'Removing images'
-                sh 'docker images rm -f ${repo_name}:latest'
-                sh 'docker images rm -f ${org_ecr_uri}/${repo_name}:latest'
-                sh 'docker images rm -f ${org_ecr_uri}/${repo_name}:${commit}'
+                sh 'docker images rm ${repo_name}:latest'
+                sh 'docker images rm ${org_ecr_uri}/${repo_name}:latest'
+                sh 'docker images rm ${org_ecr_uri}/${repo_name}:${commit}'
             }
         }
     }
