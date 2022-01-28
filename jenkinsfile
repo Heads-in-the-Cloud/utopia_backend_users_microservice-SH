@@ -30,10 +30,12 @@ pipeline {
 //         }
 
         stage('Testing') {
-            withPythonEnv('python3') {
-                echo 'Running Python unittests...'
-                sh 'pip install pytest'
-                sh 'pytest mytest.py'
+            steps{
+                withPythonEnv('python3') {
+                    echo 'Running Python unittests...'
+                    sh 'pip install pytest'
+                    sh 'pytest mytest.py'
+                }
             }
         }
 
