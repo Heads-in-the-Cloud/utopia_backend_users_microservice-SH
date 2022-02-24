@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
-FROM utopia_backend_base_image
+FROM seanhorner/utopia_backend_base_image
 
-MAINTAINER Sean Horner "sean.horner@smoothstack.com"
+LABEL maintainer="sean.horner@smoothstack.com"
 LABEL project="utopia_airlines"
 
 # Changing working directory to the system user's home repository
@@ -24,10 +24,6 @@ RUN chmod +x boot.sh
 
 # Setting the FLASK_APP environmental variable
 ENV FLASK_APP api_microservice/app.py
-
-# Setting the DB_ACCESS_URI and SECRET_KEY environmental variables to their secrets mount
-ENV DB_ACCESS_URI /run/secrets/utopia_db_uri
-ENV SECRET_KEY /run/secrets/utopia_secret_key
 
 # Ensuring that the system user has the appropriate permissions to run the application
 RUN chown -R utopian:utopian ./
