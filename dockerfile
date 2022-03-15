@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM seanhorner/utopia_backend_base_fastapi
+FROM seanhorner/utopia_fastapi_backend_base
 
 MAINTAINER Sean Horner "sean.horner@smoothstack.com"
 LABEL project="utopia_airlines"

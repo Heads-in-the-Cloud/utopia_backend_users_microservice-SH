@@ -10,7 +10,7 @@ if [ ! -e "$SECRET_KEY" ]; then
   echo " ├─ SECRET_KEY set to default value..."
 fi
 # Then check if the SECRET_FILE env var points to a file, in which case read it in as the variable value.
-if [ -f "$SECRET_KEY" ]; then
+if [ -r "$SECRET_KEY" ]; then
   echo " ├─ SECRET_KEY env var was found set to a file, now reading..."
   SECRET_KEY="$(cat "$SECRET_KEY")"
   echo " ├─ file contents read into SECRET_KEY variable..."
@@ -35,7 +35,7 @@ if [ ! -e "$DB_ACCESS_URI" ]; then
   echo " ├─ DB_ACCESS_URI set to default value..."
 fi
 # Then check if the SECRET_FILE env var points to a file, in which case read it in as the variable value.
-if [ -f "$DB_ACCESS_URI" ]; then
+if [ -r "$DB_ACCESS_URI" ]; then
   echo " ├─ DB_ACCESS_URI env var was found set to a file, now reading..."
   DB_ACCESS_URI="$(cat "$DB_ACCESS_URI")"
   echo " ├─ file contents read into DB_ACCESS_URI variable..."
