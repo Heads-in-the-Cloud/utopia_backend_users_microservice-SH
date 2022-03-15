@@ -1,69 +1,65 @@
 #!groovy
 // Users API Microservice Pipeline
 pipeline {
-    agent any
+  agent { node { label "aws-ready" } }
 
-    environment {
-        commit = sh(returnStdout: true, script: "git rev-parse --short=8 HEAD").trim()
+  environment {
+    COMMIT = sh(returnStdout: true, script: "git rev-parse --short=8 HEAD").trim()
+    ORG_ECR_URI = "${ORG_ACCOUNT_NUM}.dkr.ecr.${region}.amazonaws.com"
+    REPO_NAME = "utopia_fastapi_backend_users-sh"
+    SCANNER_HOME = tool "${SonarQubeScanner}";
+  }
 
-        org_ecr_uri = '026390315914.dkr.ecr.us-west-2.amazonaws.com'
-
-        repo_name = 'utopia_backend_users_fastapi-sh'
-        scanner_home = tool "${SonarQubeScanner}";
+  stages {
+    stage("AWS Login") {
+      steps {
+        echo "Getting AWS credentials to push to Org ECR..."
+        sh "aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${ORG_ECR_URI}"
+      }
     }
 
-    stages {
-        stage('aws_login') {
-            steps {
-                echo 'Getting AWS credentials to push to Org ECR...'
-                sh 'aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin ${org_ecr_uri}'
-            }
-        }
+    // stage("SonarQube Analysis") {
+    //   steps{
+    //     echo "Beginning SonarQube analysis..."
+    //     withSonarQubeEnv(installationName: "SonarQube") {
+    //       sh "${SCANNER_HOME}/bin/sonar-scanner"
+    //     }
+    //   }
+    // }
 
-//         stage('SonarQube Analysis') {
-//             steps{
-//                 echo 'Beginning SonarQube analysis...'
-//                 withSonarQubeEnv(installationName: 'SonarQube') {
-//                     sh "${scanner_home}/bin/sonar-scanner"
-//                 }
-//             }
-//         }
-
-        stage('Testing') {
-            steps{
-                withPythonEnv('python3') {
-                    echo 'Running Python unittests...'
-                    sh 'pip install pytest'
-                    sh 'pytest api_microservice/test_runner.py'
-                }
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo 'Building Docker image...'
-                sh 'docker build -t ${repo_name} .'
-            }
-        }
-
-        stage('Push') {
-            steps {
-                echo 'Tagging images...'
-                sh 'docker tag ${repo_name}:latest ${org_ecr_uri}/${repo_name}:latest'
-                sh 'docker tag ${repo_name}:latest ${org_ecr_uri}/${repo_name}:${commit}'
-                echo 'Pushing images...'
-                sh 'docker push ${org_ecr_uri}/${repo_name}:latest'
-                sh 'docker push ${org_ecr_uri}/${repo_name}:${commit}'
-            }
-        }
-
-        stage('Cleanup') {
-            steps {
-                echo 'Removing images'
-                sh 'docker rmi ${repo_name}:latest'
-                sh 'docker rmi ${org_ecr_uri}/${repo_name}:latest'
-                sh 'docker rmi ${org_ecr_uri}/${repo_name}:${commit}'
-            }
-        }
+    stage("Testing") {
+      steps{
+        dir("api_microservice")
+          echo "Running Python unittests..."
+          sh "pytest test_runner.py"
+      }
     }
+
+    stage("Build") {
+      steps {
+        echo "Building Docker image..."
+        sh "docker build -t ${REPO_NAME} ."
+      }
+    }
+
+    stage("Push") {
+      steps {
+        echo "Tagging images..."
+        sh "docker tag ${REPO_NAME}:latest ${ORG_ECR_URI}/${REPO_NAME}:latest"
+        sh "docker tag ${REPO_NAME}:latest ${ORG_ECR_URI}/${REPO_NAME}:${COMMIT}"
+        echo "Pushing images..."
+        sh "docker push ${ORG_ECR_URI}/${REPO_NAME}:latest"
+        sh "docker push ${ORG_ECR_URI}/${REPO_NAME}:${COMMIT}"
+      }
+    }
+
+    stage("Cleanup") {
+      steps {
+        echo "Removing images"
+        sh "docker rmi ${REPO_NAME}:latest"
+        sh "docker rmi ${ORG_ECR_URI}/${REPO_NAME}:latest"
+        sh "docker rmi ${ORG_ECR_URI}/${REPO_NAME}:${COMMIT}"
+      }
+    }
+  }
 }
